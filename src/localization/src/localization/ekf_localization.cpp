@@ -175,6 +175,7 @@ step(const double& dt){
     sigma_t = (Eigen::MatrixXd::Identity(3, 3) - (Kt * H)) * sigma_t;
   }
   m_est_mu = mu_t;
+  m_mu = mu_t;
   m_sigma = sigma_t;
 
   m_z.observations.clear();

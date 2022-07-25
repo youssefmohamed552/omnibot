@@ -94,7 +94,7 @@ handleDepthImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg){
     obs.observations.push_back(omnibot_msgs::msg::Observation());
     obs.observations.back().range = range;
     obs.observations.back().bearing = bearing;
-    obs.observations.back().signature = std::to_string(detection->id);
+    obs.observations.back().signature = detection->id;
 
 
 

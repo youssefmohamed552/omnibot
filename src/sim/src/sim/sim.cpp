@@ -62,6 +62,7 @@ Sim()
   m_observations_publisher = this->create_publisher<omnibot_msgs::msg::Observations>("observations", 10);
   m_odom_publisher = this->create_publisher<nav_msgs::msg::Odometry>("perfect_odom", 10);
   m_twist_subscriber = this->create_subscription<geometry_msgs::msg::Twist>("cmd", 10, std::bind(&Sim::handle_twist, this, std::placeholders::_1));
+  m_landmark_subscriber = this->create_subscription<omnibot_msgs::msg::Landmarks>("landmarks", 10, std::bind(&Sim::handle_landmarks, this, std::placeholders::_1));
   auto rate = std::chrono::milliseconds(((int)(1000.0/FREQ)));
   m_timer = this->create_wall_timer(rate , std::bind(&Sim::timer_callback, this));
 }
@@ -77,16 +78,15 @@ timer_callback(){
   nav_msgs::msg::Odometry m_odom;
   nav_msgs::msg::Odometry m_noise_odom;
 
-
   x_to_odom(m_x, m_odom);
   x_to_odom(m_x_hat, m_noise_odom);
 
+  omnibot_msgs::msg::Observations observations = compute_observations();
 
   m_odom_publisher->publish(m_odom);
   m_noise_odom_publisher->publish(m_noise_odom);
-  omnibot_msgs::msg::Observations observations = compute_observations();
   m_observations_publisher->publish(observations);
-
+  return;
 }
 
 void
@@ -147,6 +147,7 @@ handle_twist(const geometry_msgs::msg::Twist::SharedPtr msg){
 void
 Sim::
 handle_landmarks(const omnibot_msgs::msg::Landmarks::SharedPtr msg){
+  std::cout << "got landmarks" << std::endl;
   m_landmarks = *msg;
   return;
 }
@@ -157,7 +158,7 @@ get_observation(const Eigen::Vector3d& x, const omnibot_msgs::msg::Landmark& l){
   const double dy = l.position.y - x(1);
   const double dx = l.position.x - x(0);
   o.range = sqrt((dy * dy) + (dx * dx));
-  o.bearing = atan2(dy, dx);
+  o.bearing = atan2(dy, dx) - x(2);
   cap_angle(o.bearing);
   o.signature = l.id;
   return o;
