@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "rclcpp/rclcpp.hpp"
 #include "omnibot_msgs/msg/landmark.hpp"
 #include "omnibot_msgs/msg/landmarks.hpp"
@@ -33,6 +34,8 @@ class LandmarkPublisher: public rclcpp::Node{
     {
       m_publisher = this->create_publisher<omnibot_msgs::msg::Landmarks>("landmarks", 10);
 
+      sleep(3);
+      std::cout << "publish landmarks" << std::endl;
       m_publisher->publish(get_landmarks());
     }
 
@@ -41,7 +44,7 @@ class LandmarkPublisher: public rclcpp::Node{
 
 
 int main(int argc, char** argv){
-  std::cout << "publish landmarks" << std::endl;
+  std::cout << "landmarks Node" << std::endl;
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<LandmarkPublisher>());
   rclcpp::shutdown();

@@ -10,7 +10,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
@@ -19,6 +18,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Landmarks.msg"
   "msg/Observation.msg"
   "msg/Observations.msg"
+  "msg/TrajectoryPoint.msg"
+  "msg/Trajectory.msg"
+  "msg/Trajectories.msg"
+  "msg/RRTLink.msg"
+  "msg/RRT.msg"
   DEPENDENCIES builtin_interfaces geometry_msgs
 )
 # uncomment the following section in order to fill in

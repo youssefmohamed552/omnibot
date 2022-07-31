@@ -36,6 +36,10 @@ add_executable(landmark_node src/landmark_publisher.cpp)
 
 add_executable(stats_node src/stats_node.cpp)
 
+add_executable(path_node src/path_node.cpp)
+
+add_executable(goal_node src/goal_node.cpp)
+
 target_link_libraries(sim_node sim)
 ament_target_dependencies(sim_node 
   rclcpp
@@ -58,6 +62,16 @@ ament_target_dependencies(stats_node
   rclcpp
   nav_msgs
 )
+
+ament_target_dependencies(path_node
+  rclcpp
+  nav_msgs
+)
+
+ament_target_dependencies(goal_node
+  rclcpp
+  nav_msgs
+)
 target_include_directories(sim_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -65,8 +79,15 @@ target_compile_features(sim_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and 
 target_compile_features(cmd_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_features(landmark_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_features(stats_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(path_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(goal_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
-install(TARGETS sim_node cmd_node landmark_node stats_node
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(TARGETS sim_node cmd_node landmark_node stats_node path_node goal_node
   DESTINATION lib/${PROJECT_NAME})
 
 

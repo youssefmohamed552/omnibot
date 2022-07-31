@@ -3,9 +3,9 @@ from math import atan2, cos, sin, pi
 import rclpy
 from rclpy.node import Node
 
-from nav_msgs.msg import Odometry
-from omnibot_msgs.msg import Landmarks, Observations
-from geometry_msgs.msg import Pose
+from nav_msgs.msg import Odometry, Path
+from omnibot_msgs.msg import Landmarks, Observations, Trajectories, Trajectory, RRT
+from geometry_msgs.msg import Pose, Point
 
 from tkinter import Tk, Canvas, Frame, BOTH
 
@@ -126,6 +126,51 @@ class GUIFrame(Frame):
     for observation in observations.observations:
       self.draw_square(center=get_obs_position(pose, observation), color='#f0f')
 
+  def draw_trajectories(self, trajectories):
+    for trajectory in trajectories.trajectories:
+      self.draw_trajectory(trajectory, '#0ff')
+
+  def draw_trajectory(self, trajectory, color):
+    if(len(trajectory.points) <= 0 ): return
+    t0 = trajectory.points[0]
+    for trajectory_point in trajectory.points[1:]:
+      t1 = trajectory_point
+      x0, y0 = self.point_to_pixel(t0.pose.position.x, t0.pose.position.y)
+      x1, y1 = self.point_to_pixel(t1.pose.position.x, t1.pose.position.y)
+      self.canvas.create_line(x0, y0, x1, y1, fill=color)
+      # print("point x0:{} , y0:{} , x1:{} , y1:{}".format(x0, y0, x1, y1))
+      t0 = t1
+
+  def draw_path(self, path):
+    if len(path.poses) <= 0: return
+    p0 = path.poses[0].pose.position
+    for pose in path.poses[1:]:
+      p1 = pose.pose.position
+      x0, y0 = self.point_to_pixel(p0.x, p0.y)
+      x1, y1 = self.point_to_pixel(p1.x, p1.y)
+      self.canvas.create_line(x0, y0, x1, y1, fill='#f0f')
+      p0 = p1
+
+  def draw_rrt(self, rrt, color):
+    for link in rrt.links:
+      l0 = link.p1.position
+      l1 = link.p2.position
+      x0, y0 = self.point_to_pixel(l0.x, l0.y)
+      x1, y1 = self.point_to_pixel(l1.x, l1.y)
+      self.canvas.create_line(x0, y0, x1, y1, fill=color, width=2)
+      
+
+  def draw_point(self, point, color):
+    x, y = self.point_to_pixel(point.x, point.y)
+    self.canvas.create_oval(x-2, y-2, x+2, y+2, fill=color, outline=color)
+
+  def draw_random_point(self, source, point):
+    x, y = self.point_to_pixel(point.x, point.y)
+    cx, cy = self.point_to_pixel(source.x, source.y)
+    self.canvas.create_oval(x-2, y-2, x+2, y+2, fill='#f00', outline='#f00', width=2)
+    self.canvas.create_line(x, y, cx, cy, fill='#f00', width=2)
+    
+
 
 
 class GUINode(Node):
@@ -138,6 +183,12 @@ class GUINode(Node):
     self.est_odom_subscription = self.create_subscription(Odometry, 'est_odom', self.handle_est_odom, 10)
     self.landmarks_subscription = self.create_subscription(Landmarks, 'landmarks', self.handle_landmarks, 10)
     self.observations_subscription = self.create_subscription(Observations, 'observations', self.handle_observations, 10)
+    self.trajectories_subscription = self.create_subscription(Trajectories, 'traj', self.handle_trajectories, 10)
+    self.trajectory_subscription = self.create_subscription(Trajectory, 'main_traj', self.handle_trajectory, 10)
+    self.path_subscription = self.create_subscription(Path, 'path', self.handle_path, 10)
+    self.path_point_subscription = self.create_subscription(Point, 'path_point', self.handle_path_point, 10);
+    self.rrt_subscription = self.create_subscription(RRT, 'rrt', self.handle_rrt, 10);
+    self.random_point_subscription = self.create_subscription(Point, 'random_point', self.handle_random_point, 10);
     self.gui_timer = self.create_timer(0.1, self.timer_callback)
 
     self.odom = Odometry()
@@ -145,6 +196,12 @@ class GUINode(Node):
     self.est_odom = Odometry()
     self.landmarks = Landmarks()
     self.observations = Observations()
+    self.trajectories = Trajectories()
+    self.trajectory = Trajectory()
+    self.path = Path()
+    self.path_point = Point()
+    self.rrt = RRT()
+    self.random_point = Point()
     
     self.draw()
     self.gui_window.update()
@@ -153,6 +210,12 @@ class GUINode(Node):
     self.est_odom_subscription # prevent unused variable warning
     self.landmarks_subscription # prevent unused variable warning
     self.observations_subscription # prevent unused variable warning
+    self.trajectories_subscription # prevent unused variable warning
+    self.path_subscription # prevent unused variable warning
+    self.path_point_subscription # prevent unused variable warning
+    self.trajectory_subscription # prevent unused variable warning
+    self.rrt_subscription # prevent unused variable warning
+    self.random_point_subscription # prevent unused variable warning
 
   def timer_callback(self):
     try:
@@ -174,8 +237,13 @@ class GUINode(Node):
     self.gui_frame.draw_robot(self.odom.pose.pose, color='#000',  radius=0.1225)
     self.gui_frame.draw_robot(self.est_odom.pose.pose, color='#0f0',  radius=0.1225)
     self.gui_frame.draw_landmarks(self.landmarks)
-    self.gui_frame.draw_observations(self.odom.pose.pose, self.observations)
-
+    self.gui_frame.draw_observations(self.est_odom.pose.pose, self.observations)
+    self.gui_frame.draw_trajectories(self.trajectories)
+    self.gui_frame.draw_trajectory(self.trajectory, '#fd2')
+    self.gui_frame.draw_point(self.path_point, color='#f00')
+    self.gui_frame.draw_rrt(self.rrt, color='#00f')
+    self.gui_frame.draw_path(self.path)
+    self.gui_frame.draw_random_point(self.est_odom.pose.pose.position, self.random_point)
 
     self.gui_frame.canvas.pack(fill=BOTH, expand=1)
 
@@ -211,6 +279,36 @@ class GUINode(Node):
     self.draw()
     self.gui_window.update()
     return
+
+  def handle_trajectories(self, msg):
+    self.trajectories = msg
+    self.draw()
+    self.gui_window.update()
+
+  def handle_trajectory(self, msg):
+    self.trajectory = msg
+    self.draw()
+    self.gui_window.update()
+
+  def handle_path_point(self, msg):
+    self.path_point = msg
+    self.draw()
+    self.gui_window.update()
+
+  def handle_path(self, msg):
+    self.path = msg
+    self.draw()
+    self.gui_window.update()
+
+  def handle_rrt(self, msg):
+    self.rrt = msg
+    self.draw()
+    self.gui_window.update()
+
+  def handle_random_point(self, msg):
+    self.random_point = msg
+    self.draw()
+    self.gui_window.update()
     
 
 def main(args=None):

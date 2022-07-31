@@ -17,7 +17,7 @@ class CommandPublisher: public rclcpp::Node{
       m_twist_msg.linear.x = 0.5;
       m_twist_msg.angular.z = 0.5;
 
-      sleep(3);
+      sleep(5);
 
       std::cout << "publishing twist msg" << std::endl;
       m_publisher->publish(m_twist_msg);

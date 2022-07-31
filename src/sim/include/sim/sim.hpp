@@ -8,7 +8,7 @@
 #include "omnibot_msgs/msg/observations.hpp"
 
 
-#define FREQ 30.0
+#define FREQ 10.0
 
 class Sim: public rclcpp::Node{
   private:
@@ -17,6 +17,7 @@ class Sim: public rclcpp::Node{
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_noise_odom_publisher;
     rclcpp::Publisher<omnibot_msgs::msg::Observations>::SharedPtr m_observations_publisher;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr m_twist_subscriber;
+    rclcpp::Subscription<omnibot_msgs::msg::Landmarks>::SharedPtr m_landmark_subscriber;
 
     
 

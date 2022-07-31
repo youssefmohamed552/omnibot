@@ -44,6 +44,11 @@ cap_angle(double& theta){
   }
 }
 
+bool
+out_of_range(const double& w){
+  return w > 0.00001 || w < -0.00001;
+}
+
 
 Sim::
 Sim()
@@ -104,20 +109,42 @@ step(const double& dt){
 
   // compute model with noise
   Eigen::Vector3d dx_hat(0.0, 0.0, 0.0);
-  double v_w_hat = u_hat(0) / u_hat(1);
+  double v_hat = u_hat(0);
+  double w_hat = u_hat(1);
+  double r_hat = v_hat * dt;
+  if(out_of_range(w_hat)){
+    r_hat = v_hat / w_hat;
+  }
   double d_theta_hat = u_hat(1) * dt;
-  dx_hat(0) = - (v_w_hat * sin(m_x_hat(2))) + (v_w_hat * sin(m_x_hat(2) + d_theta_hat));
-  dx_hat(1) = (v_w_hat * cos(m_x_hat(2))) - (v_w_hat * cos(m_x_hat(2) + d_theta_hat));
+  if(!out_of_range(w_hat)){
+    dx_hat(0) = r_hat * cos(m_x_hat(2));
+    dx_hat(1) = r_hat * sin(m_x_hat(2));
+  }
+  else{
+    dx_hat(0) = - (r_hat * sin(m_x_hat(2))) + (r_hat * sin(m_x_hat(2) + d_theta_hat));
+    dx_hat(1) = (r_hat * cos(m_x_hat(2))) - (r_hat * cos(m_x_hat(2) + d_theta_hat));
+  }
   dx_hat(2) = d_theta_hat;
   m_x_hat += dx_hat;
   cap_angle(m_x_hat(2));
 
   // compute model without noise
   Eigen::Vector3d dx(0.0, 0.0, 0.0);
-  double v_w = m_u(0) / m_u(1);
+  double v = m_u(0);
+  double w = m_u(1);
+  double r = v * dt;
+  if(out_of_range(w)){
+    r = v / w;
+  }
   double d_theta = m_u(1) * dt;
-  dx(0) = - (v_w * sin(m_x(2))) + (v_w * sin(m_x(2) + d_theta));
-  dx(1) = (v_w * cos(m_x(2))) - (v_w * cos(m_x(2) + d_theta));
+  if(!out_of_range(w)){
+    dx(0) = r * cos(m_x(2));
+    dx(1) = r * sin(m_x(2));
+  }
+  else{
+    dx(0) = - (r * sin(m_x(2))) + (r * sin(m_x(2) + d_theta));
+    dx(1) = (r * cos(m_x(2))) - (r * cos(m_x(2) + d_theta));
+  }
   dx(2) = d_theta;
   m_x += dx;
   cap_angle(m_x(2));
